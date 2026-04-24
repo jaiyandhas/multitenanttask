@@ -1,6 +1,6 @@
 const { tenantSchemaName } = require('../middleware/tenant');
 
-async function listTasks(client, { tenantSlug, userId, permissions }) {
+async function listTasks(client, { tenantSlug, userId, permissions, offset = 0, limit = 20 }) {
   const schema = tenantSchemaName(tenantSlug);
   const canViewAll = permissions.includes('task:view:all');
 
@@ -9,15 +9,18 @@ async function listTasks(client, { tenantSlug, userId, permissions }) {
         `SELECT t.*, u.name as assignee_name
          FROM ${schema}.tasks t
          LEFT JOIN ${schema}.users u ON u.id = t.assigned_to
-         ORDER BY t.created_at DESC`
+         ORDER BY t.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
       )
     : await client.query(
         `SELECT t.*, u.name as assignee_name
          FROM ${schema}.tasks t
          LEFT JOIN ${schema}.users u ON u.id = t.assigned_to
          WHERE t.assigned_to = $1
-         ORDER BY t.created_at DESC`,
-        [userId]
+         ORDER BY t.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
       );
 
   return res.rows;

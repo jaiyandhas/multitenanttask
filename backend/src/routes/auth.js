@@ -1,41 +1,31 @@
 const express = require('express');
 const { registerOrg, registerWithInvite, login } = require('../services/authService');
+const { validateBody } = require('../middleware/validation');
+const { authSchemas } = require('../validation/authSchemas');
 
 const router = express.Router();
 
-router.post('/register-org', async (req, res, next) => {
+router.post('/register-org', validateBody(authSchemas.registerOrg), async (req, res, next) => {
   try {
-    const { orgName, adminName, email, password } = req.body || {};
-    if (!orgName || !adminName || !email || !password) {
-      return res.status(400).json({ error: 'orgName, adminName, email, password are required' });
-    }
-    const result = await registerOrg({ orgName, adminName, email, password });
+    const result = await registerOrg(req.body);
     return res.json(result);
   } catch (err) {
     return next(err);
   }
 });
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', validateBody(authSchemas.registerWithInvite), async (req, res, next) => {
   try {
-    const { name, email, password, inviteToken } = req.body || {};
-    if (!name || !email || !password || !inviteToken) {
-      return res.status(400).json({ error: 'name, email, password, inviteToken are required' });
-    }
-    const result = await registerWithInvite({ inviteToken, name, email, password });
+    const result = await registerWithInvite(req.body);
     return res.json(result);
   } catch (err) {
     return next(err);
   }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', validateBody(authSchemas.login), async (req, res, next) => {
   try {
-    const { email, password, orgSlug } = req.body || {};
-    if (!email || !password || !orgSlug) {
-      return res.status(400).json({ error: 'email, password, orgSlug are required' });
-    }
-    const result = await login({ email, password, orgSlug });
+    const result = await login(req.body);
     return res.json(result);
   } catch (err) {
     return next(err);

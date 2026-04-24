@@ -160,6 +160,84 @@ Frontend runs on `http://localhost:5173`.
 | PATCH | `/api/users/:id/role` | ✅ | `user:manage` | Change user role (admin only) |
 | DELETE | `/api/users/:id` | ✅ | `user:remove` | Remove user (admin only) |
 
+## Recent Improvements (v1.1.0)
+
+### ✨ Production Readiness
+
+This version includes comprehensive security, testing, and performance improvements:
+
+- **🔒 Security Hardening**: Environment-based secrets management, rate limiting, input validation
+- **🧪 Testing Infrastructure**: Jest backend tests, Vitest frontend tests with full coverage support
+- **⚡ Performance**: Database indexes on all critical columns, pagination support
+- **📊 Error Handling**: Enhanced error boundaries, request logging, better error messages
+- **📚 Documentation**: API docs, security guide, testing guide, FIXES_SUMMARY
+
+### Key Additions
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| Input Validation | ✅ | Joi schemas for all endpoints, email/password validation |
+| Rate Limiting | ✅ | Auth endpoints (5/15min), API endpoints (100/15min, configurable) |
+| Request Logging | ✅ | Per-request timing and status logging |
+| Database Indexes | ✅ | Optimized queries on tasks, users, audit logs |
+| Pagination | ✅ | `/api/tasks?page=1&limit=20`, max 100 items/page |
+| Error Boundaries | ✅ | React error boundary with graceful UI fallback |
+| Alert System | ✅ | Context-based notifications for user actions |
+| Test Framework | ✅ | Jest (backend) + Vitest (frontend) with coverage tracking |
+
+### Documentation
+
+- **[SECURITY.md](SECURITY.md)** — Security features, production checklist, environment setup
+- **[TESTING.md](TESTING.md)** — Testing guide with backend/frontend examples
+- **[API.md](API.md)** — Full API reference with request/response examples
+- **[FIXES_SUMMARY.md](FIXES_SUMMARY.md)** — Detailed changelog of all improvements
+
+### Running Tests
+
+```bash
+# Backend tests
+cd backend
+npm test                 # Run all tests once
+npm run test:watch      # Watch mode
+npm run test:coverage   # Coverage report
+
+# Frontend tests
+cd frontend
+npm test                 # Run all tests once
+npm run test:watch      # Watch mode
+npm test -- --ui        # Open test UI dashboard
+```
+
+### Environment Configuration
+
+Required environment variables (see `.env.example`):
+
+```bash
+DATABASE_URL=postgres://user:password@localhost:5432/tasksystem
+JWT_SECRET=generate-a-secure-key-for-production
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+PORT=5000
+RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100  # per window
+```
+
+For local development, copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+# Edit .env.local with local database credentials
+```
+
+### Production Deployment
+
+1. Generate a secure JWT_SECRET: `openssl rand -base64 32`
+2. Review [SECURITY.md](SECURITY.md) production checklist
+3. Set `NODE_ENV=production` and `AUTO_SEED=false`
+4. Configure database with strong password
+5. Set appropriate `CORS_ORIGIN` for your domain
+6. Enable HTTPS and security headers (see nginx config in SECURITY.md)
+
 ## If I Had More Time
 
 - Rate limiting per tenant

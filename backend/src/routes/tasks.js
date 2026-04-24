@@ -1,9 +1,17 @@
 const express = require('express');
 const { withTenantClient } = require('../middleware/auth');
 const { requirePermission } = require('../middleware/rbac');
+const { validateQuery } = require('../middleware/validation');
 const { listTasks, createTask, updateTask, deleteTask } = require('../services/tasksService');
+const Joi = require('joi');
 
 const router = express.Router();
+
+// Pagination schema
+const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20)
+});
 
 async function getCurrentUserName(client, userId) {
   if (!userId) return null;
@@ -32,16 +40,36 @@ async function insertTaskAuditLog(client, { taskId, action, changedBy, changedBy
   );
 }
 
-router.get('/', async (req, res, next) => {
+router.get('/', validateQuery(paginationSchema), async (req, res, next) => {
   try {
-    const tasks = await withTenantClient(req, (client) =>
-      listTasks(client, {
+    const { page, limit } = req.query;
+    const offset = (page - 1) * limit;
+
+    const result = await withTenantClient(req, async (client) => {
+      const tasks = await listTasks(client, {
         tenantSlug: req.user.tenantSlug,
         userId: req.user.userId,
-        permissions: req.user.permissions
-      })
-    );
-    return res.json({ tasks });
+        permissions: req.user.permissions,
+        offset,
+        limit
+      });
+
+      // Get total count for pagination metadata
+      const countRes = await client.query(`SELECT COUNT(*)::int AS total FROM tasks`);
+      const total = countRes.rows[0].total;
+
+      return {
+        tasks,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      };
+    });
+
+    return res.json(result);
   } catch (err) {
     return next(err);
   }
