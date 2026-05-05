@@ -1,23 +1,53 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const { withTenantClient } = require('../middleware/auth');
 const { requirePermission } = require('../middleware/rbac');
 const { listUsers, updateUserRole, removeUser } = require('../services/usersService');
-const jwt = require('jsonwebtoken');
+const { pool } = require('../config/db');
+const { tenantSchemaName } = require('../middleware/tenant');
 
 const router = express.Router();
 
-router.post('/invite-link', requirePermission('user:manage'), async (req, res, next) => {
+// Admin directly adds a new member or manager (no invite link needed)
+router.post('/add', requirePermission('user:manage'), async (req, res, next) => {
   try {
-    const { role } = req.body || {};
-    if (!role) return res.status(400).json({ error: 'role is required' });
+    const { name, email, password, role } = req.body || {};
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'name, email, password, and role are required' });
+    }
     if (!['manager', 'member'].includes(role)) {
       return res.status(400).json({ error: 'role must be manager or member' });
     }
 
-    const payload = { tenantSlug: req.user.tenantSlug, role, type: 'invite' };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
-    const inviteLink = `http://localhost:5173/invite/${token}`;
-    return res.json({ inviteLink });
+    const tenantSlug = req.user.tenantSlug;
+    const schema = tenantSchemaName(tenantSlug);
+    const safeEmail = String(email).trim().toLowerCase();
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `INSERT INTO ${schema}.users (name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, name, email, role, created_at`,
+        [name, safeEmail, passwordHash, role]
+      );
+      await client.query(
+        `INSERT INTO public.user_tenants (email, tenant_slug) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING`,
+        [safeEmail, tenantSlug]
+      );
+      await client.query('COMMIT');
+      return res.status(201).json({ user: result.rows[0] });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'A user with that email already exists' });
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     return next(err);
   }

@@ -4,9 +4,9 @@ export function usersApi(api) {
       const res = await api.get('/api/users')
       return res.data.users
     },
-    async createInviteLink(role) {
-      const res = await api.post('/api/users/invite-link', { role })
-      return res.data.inviteLink
+    async addUser({ name, email, password, role }) {
+      const res = await api.post('/api/users/add', { name, email, password, role })
+      return res.data.user
     },
     async updateRole(id, role) {
       const res = await api.patch(`/api/users/${id}/role`, { role })
