@@ -67,20 +67,14 @@ app.use((err, req, res, next) => {
 
 const port = Number(process.env.PORT || 4000);
 
-// If running on Vercel, we don't start the server or init DB here,
-// we just export the app for serverless function handling.
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
-  initDb()
-    .then(() => {
-      app.listen(port, () => {
-        console.log(`API listening on http://localhost:${port}`);
-      });
-    })
-    .catch((err) => {
-      console.error('Failed to initialize DB', err);
-      process.exit(1);
+initDb()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`API listening on http://localhost:${port}`);
     });
-}
+  })
+  .catch((err) => {
+    console.error('Failed to initialize DB', err);
+    process.exit(1);
+  });
 
