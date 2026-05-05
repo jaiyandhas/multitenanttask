@@ -69,11 +69,16 @@ async function registerWithInvite({ inviteToken, name, email, password }) {
   try {
     await client.query('BEGIN');
     await setTenantContext(client, tenantSlug);
+    const safeEmail = String(email || '').trim().toLowerCase();
     const result = await client.query(
       `INSERT INTO ${schema}.users (name, email, password_hash, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, role`,
-      [name, String(email || '').trim().toLowerCase(), passwordHash, role]
+      [name, safeEmail, passwordHash, role]
+    );
+    await client.query(
+      `INSERT INTO public.user_tenants (email, tenant_slug) VALUES ($1, $2)`,
+      [safeEmail, tenantSlug]
     );
     await client.query('COMMIT');
 
@@ -145,11 +150,16 @@ async function registerOrg({ orgName, adminName, email, password }) {
   try {
     await tenantClient.query('BEGIN');
     await setTenantContext(tenantClient, tenantSlug);
+    const safeEmail = email.toLowerCase();
     const result = await tenantClient.query(
       `INSERT INTO ${schema}.users (name, email, password_hash, role)
        VALUES ($1, $2, $3, 'admin')
        RETURNING id, role`,
-      [adminName, email.toLowerCase(), passwordHash]
+      [adminName, safeEmail, passwordHash]
+    );
+    await tenantClient.query(
+      `INSERT INTO public.user_tenants (email, tenant_slug) VALUES ($1, $2)`,
+      [safeEmail, tenantSlug]
     );
     await tenantClient.query('COMMIT');
 
@@ -164,19 +174,18 @@ async function registerOrg({ orgName, adminName, email, password }) {
   }
 }
 
-async function login({ email, password, orgSlug }) {
+async function login({ email, password }) {
   await ensurePublicSchema();
 
-  const org = await pool.query('SELECT id, name, slug FROM public.organizations WHERE slug=$1', [
-    String(orgSlug || '').trim().toLowerCase()
-  ]);
-  if (org.rowCount === 0) {
-    const err = new Error('Organization not found');
-    err.statusCode = 404;
+  const userEmail = String(email || '').trim().toLowerCase();
+  const utRes = await pool.query('SELECT tenant_slug FROM public.user_tenants WHERE email=$1', [userEmail]);
+  if (utRes.rowCount === 0) {
+    const err = new Error('Invalid credentials');
+    err.statusCode = 401;
     throw err;
   }
 
-  const tenantSlug = org.rows[0].slug;
+  const tenantSlug = utRes.rows[0].tenant_slug;
   const schema = tenantSchemaName(tenantSlug);
 
   const client = await pool.connect();
@@ -184,7 +193,7 @@ async function login({ email, password, orgSlug }) {
     await setTenantContext(client, tenantSlug);
     const userRes = await client.query(
       `SELECT id, email, password_hash, role FROM ${schema}.users WHERE email=$1`,
-      [String(email || '').trim().toLowerCase()]
+      [userEmail]
     );
     if (userRes.rowCount === 0) {
       const err = new Error('Invalid credentials');

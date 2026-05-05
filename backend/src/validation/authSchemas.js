@@ -19,7 +19,6 @@ const authSchemas = {
   login: Joi.object({
     email: Joi.string().trim().email().lowercase().required(),
     password: Joi.string().required(),
-    orgSlug: Joi.string().trim().lowercase().min(2).max(32).required(),
   }),
 };
 

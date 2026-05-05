@@ -26,7 +26,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+  const apiUrl = import.meta.env.VITE_API_URL || '/api'
 
   const next = () => setStep((s) => Math.min(2, s + 1))
   const back = () => setStep((s) => Math.max(1, s - 1))

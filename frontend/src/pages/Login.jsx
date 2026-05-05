@@ -7,13 +7,12 @@ export default function Login() {
   const navigate = useNavigate()
   const { setToken } = useAuth()
 
-  const [orgSlug, setOrgSlug] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+  const apiUrl = import.meta.env.VITE_API_URL || '/api'
 
   const submit = async (e) => {
     e.preventDefault()
@@ -21,7 +20,6 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await axios.post(`${apiUrl}/api/auth/login`, {
-        orgSlug,
         email,
         password
       })
@@ -41,22 +39,14 @@ export default function Login() {
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Login</h1>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Org slug</label>
-            <input
-              value={orgSlug}
-              onChange={(e) => setOrgSlug(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-              placeholder="acme"
-            />
-          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700">Email</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-              placeholder="admin@acme.com"
+              placeholder="admin@google.com"
             />
           </div>
           <div>
@@ -78,7 +68,7 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={loading || !orgSlug || !email || !password}
+            disabled={loading || !email || !password}
             className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign in'}

@@ -1,12 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-import Landing from './pages/Landing'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Users from './pages/Users'
-import Invite from './pages/Invite'
-import Welcome from './pages/Welcome'
 
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
@@ -17,10 +14,9 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/invite/:token" element={<Invite />} />
 
           <Route
             path="/app"
@@ -30,7 +26,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="welcome" element={<Welcome />} />
             <Route index element={<Dashboard />} />
             <Route
               path="users"
@@ -42,7 +37,7 @@ function App() {
             />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </ErrorBoundary>

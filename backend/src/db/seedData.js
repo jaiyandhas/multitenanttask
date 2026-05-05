@@ -25,6 +25,12 @@ async function ensureUser(client, { tenantSlug, name, email, password, role }) {
      RETURNING id`,
     [name, email.toLowerCase(), passwordHash, role]
   );
+  await client.query(
+    `INSERT INTO public.user_tenants (email, tenant_slug)
+     VALUES ($1, $2)
+     ON CONFLICT (email) DO NOTHING`,
+    [email.toLowerCase(), tenantSlug]
+  );
   return res.rows[0].id;
 }
 
@@ -52,9 +58,9 @@ async function createTaskWithAudit(client, { tenantSlug, title, description, sta
   );
 }
 
-async function seedOrgAcme() {
-  const tenantSlug = 'acme';
-  await upsertOrg({ name: 'Acme Corp', slug: tenantSlug });
+async function seedOrgGoogle() {
+  const tenantSlug = 'google';
+  await upsertOrg({ name: 'Google', slug: tenantSlug });
   await provisionTenantSchema(tenantSlug);
 
   const client = await pool.connect();
@@ -64,22 +70,22 @@ async function seedOrgAcme() {
 
     const adminId = await ensureUser(client, {
       tenantSlug,
-      name: 'Acme Admin',
-      email: 'admin@acme.com',
+      name: 'Sundar Pichai',
+      email: 'admin@google.com',
       password: 'password123',
       role: 'admin'
     });
     const managerId = await ensureUser(client, {
       tenantSlug,
-      name: 'Acme Manager',
-      email: 'manager@acme.com',
+      name: 'Google Manager',
+      email: 'manager@google.com',
       password: 'password123',
       role: 'manager'
     });
     const memberId = await ensureUser(client, {
       tenantSlug,
-      name: 'Acme Member',
-      email: 'member@acme.com',
+      name: 'Google Engineer',
+      email: 'member@google.com',
       password: 'password123',
       role: 'member'
     });
@@ -148,9 +154,9 @@ async function seedOrgAcme() {
   }
 }
 
-async function seedOrgStark() {
-  const tenantSlug = 'stark';
-  await upsertOrg({ name: 'Stark Industries', slug: tenantSlug });
+async function seedOrgMicrosoft() {
+  const tenantSlug = 'microsoft';
+  await upsertOrg({ name: 'Microsoft', slug: tenantSlug });
   await provisionTenantSchema(tenantSlug);
 
   const client = await pool.connect();
@@ -160,8 +166,8 @@ async function seedOrgStark() {
 
     const adminId = await ensureUser(client, {
       tenantSlug,
-      name: 'Stark Admin',
-      email: 'admin@stark.com',
+      name: 'Satya Nadella',
+      email: 'admin@microsoft.com',
       password: 'password123',
       role: 'admin'
     });
@@ -216,8 +222,8 @@ async function seedOrgStark() {
 
 async function seedAll() {
   await ensurePublicSchema();
-  await seedOrgAcme();
-  await seedOrgStark();
+  await seedOrgGoogle();
+  await seedOrgMicrosoft();
 }
 
 module.exports = { seedAll };

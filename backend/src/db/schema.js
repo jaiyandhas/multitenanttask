@@ -13,6 +13,14 @@ async function ensurePublicSchema() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS public.user_tenants (
+      email TEXT PRIMARY KEY,
+      tenant_slug TEXT NOT NULL REFERENCES public.organizations(slug) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
 }
 
 async function provisionTenantSchema(slug) {

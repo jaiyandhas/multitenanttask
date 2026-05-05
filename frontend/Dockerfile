@@ -1,9 +1,10 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json ./
 RUN npm install
+RUN npm install @tailwindcss/oxide-linux-arm64-gnu -f
 
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
